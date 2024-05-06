@@ -4,14 +4,16 @@ using TestingWithDb.Infrastructure;
 namespace TestingWithDb.IntegrationTests.Setup;
 
 [Collection(nameof(DatabaseTestCollection))]
-public abstract class DatabaseTest : IAsyncLifetime
+public abstract class BaseTest : IAsyncLifetime
 {
+    private readonly IntegrationTestFactory _factory;
+    private readonly Func<Task> _resetDatabase;
     protected readonly ProductDbContext DbContext;
     protected readonly Fixture Fixture;
-    private readonly Func<Task> _resetDatabase;
 
-    public DatabaseTest(IntegrationTestFactory factory)
+    public BaseTest(IntegrationTestFactory factory)
     {
+        _factory = factory;
         _resetDatabase = factory.ResetDatabase;
         DbContext = factory.DbContext;
         Fixture = new Fixture();
@@ -33,5 +35,10 @@ public abstract class DatabaseTest : IAsyncLifetime
     {
         await DbContext.AddAsync(entity);
         await DbContext.SaveChangesAsync();
+    }
+
+    protected T GetRequiredService<T>() where T : notnull
+    {
+        return _factory.GetRequiredService<T>();
     }
 }

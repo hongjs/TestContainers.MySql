@@ -1,37 +1,36 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TestingWithDb.Domain.AggregatesModel;
-using TestingWithDb.Infrastructure;
 
-namespace TestingWithDb.Api;
+namespace TestingWithDb.Infrastructure.Repositories;
 
-public class ReviewService
+public class ReviewRepository : IReviewRepository
 {
-    private readonly ProductDbContext _context;
+    private readonly ProductDbContext _dbContext;
 
-    public ReviewService(ProductDbContext context)
+    public ReviewRepository(ProductDbContext dbContext)
     {
-        _context = context;
+        _dbContext = dbContext;
     }
 
     public async Task ReviewProduct(int productId, int userId, string reviewContent)
     {
-        var test = await _context.ProductReviews.FirstOrDefaultAsync(x =>
+        var test = await _dbContext.ProductReviews.FirstOrDefaultAsync(x =>
             x.ProductId == productId &&
             x.UserId == userId);
-        var existingReview = await _context.ProductReviews.FirstOrDefaultAsync(x =>
+        var existingReview = await _dbContext.ProductReviews.FirstOrDefaultAsync(x =>
             x.ProductId == productId &&
             x.UserId == userId);
 
         if (existingReview != null)
             existingReview.ReviewContent = reviewContent;
         else
-            await _context.ProductReviews.AddAsync(new ProductReview
+            await _dbContext.ProductReviews.AddAsync(new ProductReview
             {
                 ProductId = productId,
                 UserId = userId,
                 ReviewContent = reviewContent
             });
 
-        await _context.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
     }
 }

@@ -1,20 +1,20 @@
 ﻿using AutoFixture;
 using FluentAssertions;
-using TestingWithDb.Api;
 using TestingWithDb.Domain.AggregatesModel;
+using TestingWithDb.Infrastructure.Repositories;
 using TestingWithDb.IntegrationTests.Setup;
 
 namespace TestingWithDb.IntegrationTests;
 
-public class FavoriteServiceTests : DatabaseTest, IAsyncLifetime
+public class FavoriteServiceTests : BaseTest, IAsyncLifetime
 {
-    private readonly FavoriteService _service;
+    private readonly IFavoriteRepository _favoriteRepo;
     private Product _existingProduct = null!;
     private User _existingUser = null!;
 
     public FavoriteServiceTests(IntegrationTestFactory factory) : base(factory)
     {
-        _service = new FavoriteService(DbContext);
+        _favoriteRepo = GetRequiredService<IFavoriteRepository>();
     }
 
     public new async Task InitializeAsync()
@@ -30,7 +30,7 @@ public class FavoriteServiceTests : DatabaseTest, IAsyncLifetime
             ProductId = _existingProduct.Id,
             UserId = _existingUser.Id
         };
-        await _service.FavoriteProduct(_existingProduct.Id, _existingUser.Id);
+        await _favoriteRepo.FavoriteProduct(_existingProduct.Id, _existingUser.Id);
 
         var allFavorites = DbContext.ProductFavorites.ToList();
         allFavorites
@@ -51,7 +51,7 @@ public class FavoriteServiceTests : DatabaseTest, IAsyncLifetime
             UserId = _existingUser.Id
         });
 
-        await _service.FavoriteProduct(_existingProduct.Id, _existingUser.Id);
+        await _favoriteRepo.FavoriteProduct(_existingProduct.Id, _existingUser.Id);
 
         var allFavorites = DbContext.ProductFavorites.ToList();
         allFavorites.Should().ContainSingle();
