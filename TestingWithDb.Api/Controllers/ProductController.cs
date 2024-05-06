@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TestingWithDb.Infrastructure.Repositories;
 
 namespace TestingWithDb.Api.Controllers;
 
@@ -6,17 +7,17 @@ namespace TestingWithDb.Api.Controllers;
 [Route("[controller]")]
 public class ProductController
 {
-    private readonly IFavoriteService _favoriteService;
+    private readonly IFavoriteRepository _favoriteRepo;
 
-    public ProductController(IFavoriteService favoriteService)
+    public ProductController(IFavoriteRepository favoriteRepo)
     {
-        _favoriteService = favoriteService;
+        _favoriteRepo = favoriteRepo;
     }
 
     [HttpPost]
-    public async Task FavoriteBook([FromBody]FavoriteBookRequest request)
+    public async Task FavoriteBook([FromBody] FavoriteBookRequest request)
     {
-        await _favoriteService.FavoriteProduct(request.ProductId, request.UserId);
+        await _favoriteRepo.FavoriteProduct(request.ProductId, request.UserId);
     }
 }
 

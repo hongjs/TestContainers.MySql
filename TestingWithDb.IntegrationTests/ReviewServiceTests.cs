@@ -1,20 +1,20 @@
 ﻿using AutoFixture;
 using FluentAssertions;
-using TestingWithDb.Api;
 using TestingWithDb.Domain.AggregatesModel;
+using TestingWithDb.Infrastructure.Repositories;
 using TestingWithDb.IntegrationTests.Setup;
 
 namespace TestingWithDb.IntegrationTests;
 
-public class ReviewServiceTests : DatabaseTest, IAsyncLifetime
+public class ReviewServiceTests : BaseTest, IAsyncLifetime
 {
-    private readonly ReviewService _service;
+    private readonly IReviewRepository _reviewRepo;
     private Product _existingProduct = null!;
     private User _existingUser = null!;
 
     public ReviewServiceTests(IntegrationTestFactory factory) : base(factory)
     {
-        _service = new ReviewService(DbContext);
+        _reviewRepo = GetRequiredService<IReviewRepository>();
     }
 
     public new async Task InitializeAsync()
@@ -31,7 +31,7 @@ public class ReviewServiceTests : DatabaseTest, IAsyncLifetime
             UserId = _existingUser.Id,
             ReviewContent = Fixture.Create<string>()
         };
-        await _service.ReviewProduct(_existingProduct.Id, _existingUser.Id, expectedReview.ReviewContent);
+        await _reviewRepo.ReviewProduct(_existingProduct.Id, _existingUser.Id, expectedReview.ReviewContent);
 
         var allReviews = DbContext.ProductReviews.ToList();
         allReviews
@@ -53,7 +53,7 @@ public class ReviewServiceTests : DatabaseTest, IAsyncLifetime
             ReviewContent = "old review content"
         });
 
-        await _service.ReviewProduct(_existingProduct.Id, _existingUser.Id, "new review content");
+        await _reviewRepo.ReviewProduct(_existingProduct.Id, _existingUser.Id, "new review content");
 
         var allFavorites = DbContext.ProductReviews.ToList();
         allFavorites

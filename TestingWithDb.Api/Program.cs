@@ -1,5 +1,6 @@
-using System.Reflection;
 using TestingWithDb.Api.Startup;
+
+namespace TestingWithDb.Api;
 
 public class Program
 {
@@ -7,9 +8,7 @@ public class Program
     {
         try
         {
-            
             var builder = WebApplication.CreateBuilder(args);
-            var assembly = Assembly.GetExecutingAssembly();
 
             // Add services to the container.
 
@@ -33,7 +32,6 @@ public class Program
                 app.UseSwaggerUI();
             }
 
-            app.UseExceptionHandler();
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();

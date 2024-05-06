@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Respawn;
 using Testcontainers.MySql;
+using TestingWithDb.Api;
 using TestingWithDb.Infrastructure;
 
 namespace TestingWithDb.IntegrationTests.Setup;
@@ -18,17 +19,22 @@ public class DatabaseTestCollection : ICollectionFixture<IntegrationTestFactory>
 
 public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly MySqlContainer _container = new MySqlBuilder()
-        .WithDatabase("db")
-        .WithUsername("postgres")
-        .WithPassword("postgres")
-        .WithExposedPort(3306)
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(3306))
-        .WithCleanUp(true)
-        .Build();
-
+    private readonly MySqlContainer _container;
     private DbConnection _connection = null!;
     private Respawner _respawner = null!;
+    private IServiceProvider? _serviceProvider;
+
+    public IntegrationTestFactory()
+    {
+        _container = new MySqlBuilder()
+            .WithDatabase("db")
+            .WithUsername("postgres")
+            .WithPassword("postgres")
+            .WithExposedPort(3306)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(3306))
+            .WithCleanUp(true)
+            .Build();
+    }
 
     public ProductDbContext DbContext { get; private set; } = null!;
 
@@ -41,14 +47,15 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
                 "mysql", "-p", "mysql", "-e", "ALTER DATABASE db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
             ]);
 
-            DbContext = Services.CreateScope().ServiceProvider.GetRequiredService<ProductDbContext>();
+            _serviceProvider = Services.CreateScope().ServiceProvider;
+            DbContext = _serviceProvider.GetRequiredService<ProductDbContext>();
             _connection = DbContext.Database.GetDbConnection();
             await _connection.OpenAsync();
 
             _respawner = await Respawner.CreateAsync(_connection, new RespawnerOptions
             {
                 DbAdapter = DbAdapter.MySql,
-                SchemasToInclude = new[] { "db" }
+                SchemasToInclude = ["db"]
             });
         }
         catch (Exception e)
@@ -83,21 +90,9 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
             services.EnsureDbCreated<ProductDbContext>();
         });
     }
-}
 
-public static class ServiceCollectionExtensions
-{
-    public static void RemoveDbContext<T>(this IServiceCollection services) where T : DbContext
+    internal T GetRequiredService<T>() where T : notnull
     {
-        var descriptor = services.SingleOrDefault(x => x.ServiceType == typeof(DbContextOptions<T>));
-        if (descriptor != null) services.Remove(descriptor);
-    }
-
-    public static void EnsureDbCreated<T>(this IServiceCollection services) where T : DbContext
-    {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var serviceProvider = scope.ServiceProvider;
-        var context = serviceProvider.GetRequiredService<T>();
-        context.Database.EnsureCreated();
+        return (_serviceProvider ?? throw new InvalidOperationException()).GetRequiredService<T>();
     }
 }

@@ -14,7 +14,7 @@ public static class DbContextExtensions
         services.AddEntityFrameworkNamingConventions();
         var migrationAssemblyName = Assembly.GetAssembly(typeof(PlaceHolderForAssemblyReference))!.GetName().Name;
 
-        services.AddDbContextPool<ProductDbContext>((servicesProvider, dbOptions) =>
+        services.AddDbContext<ProductDbContext>((servicesProvider, dbOptions) =>
         {
             var connectionString = configuration.GetConnectionString("Db");
             dbOptions
